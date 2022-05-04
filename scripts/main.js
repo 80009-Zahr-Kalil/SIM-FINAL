@@ -241,18 +241,87 @@ function menorFinLlenarFormulario(
     menorTiempoProximo = arrayOrdenado[0][1];
   }
 
-  // arrayFinLlenarFormulario.push([
-  //   `Formulario ${formulariosCreados}`,
-  //   finLlenarFormulario,
-  // ]);
-  // console.log('ArrayFin', arrayFinLlenarFormulario);
   return menorTiempoProximo;
+}
+
+function verificarServidores(empleado) {
+  if (empleado.estado === 'libre') {
+    empleado.estado = 'ocupado';
+  } else {
+    empleado.cola++;
+  }
+
+  return empleado;
+}
+
+function decrementarCola(empleado) {
+  if (empleado.cola > 0) {
+    empleado.cola--;
+  } else {
+    empleado.estado = 'libre';
+  }
+
+  return empleado;
+}
+
+function hayFormulariosEsperandoRevision(arrayFormularios) {
+  for (let i = 0; i < arrayFormularios.length; i++) {
+    if (arrayFormularios[i].estado === 'ER') return true;
+  }
+  return false;
+}
+
+function actualizarEstadoFormulario(
+  arrayFormularios,
+  reloj,
+  nuevoEstado,
+  nuevoFinEstado
+) {
+  for (let i = 0; i < arrayFormularios.length; i++) {
+    if (reloj === arrayFormularios[i].finEstado) {
+      arrayFormularios[i].estado = nuevoEstado;
+      arrayFormularios[i].finEstado = nuevoFinEstado;
+      break;
+    }
+  }
+
+  return arrayFormularios;
+}
+
+function actualizarEspRevisionASiendoRev(arrayFormularios, nuevoFinEstado) {
+  for (let i = 0; i < arrayFormularios.length; i++) {
+    if (arrayFormularios[i].estado === 'ER') {
+      arrayFormularios[i].estado = 'SR';
+      arrayFormularios[i].finEstado = nuevoFinEstado;
+    }
+    break;
+  }
+
+  return arrayFormularios;
+}
+
+function eliminarFormularioFinalizado(arrayFormularios, reloj) {
+  for (let i = 0; i < arrayFormularios.length; i++) {
+    if (reloj === arrayFormularios[i].finEstado) {
+      arrayFormularios.shift();
+      break;
+    }
+  }
+
+  return arrayFormularios;
 }
 
 class Empleado {
   constructor(estado, cola) {
     this.estado = estado;
     this.cola = cola;
+  }
+}
+
+class Formulario {
+  constructor(estado, finEstado) {
+    this.estado = estado;
+    this.finEstado = finEstado;
   }
 }
 
@@ -303,6 +372,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
     // Evento = Inicialización
     if (reloj === 0) {
       rndCliente = randoms[0][0];
+
       let tiempoEntreLlegadas = probabilidadUniforme(
         llegadaClienteTiempoA,
         llegadaClienteTiempoB,
@@ -316,6 +386,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       rndRevisarFormulario = '-';
       rndCliente = randoms[0][0];
       rndLlenarFormulario = randoms[1][0];
+
       let tiempoEntreLlegadas = probabilidadUniforme(
         llegadaClienteTiempoA,
         llegadaClienteTiempoB,
@@ -331,6 +402,8 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       );
       finLlenarFormulario = Number((reloj + tiempoLlenarFormulario).toFixed(2));
 
+      arrayFormularios.push(new Formulario('SL', finLlenarFormulario));
+
       arrayFinLlenarFormulario.push([
         `Formulario ${formulariosCreados}`,
         finLlenarFormulario,
@@ -341,16 +414,70 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
     if (reloj === finLlenarFormulario) {
       rndCliente = '-';
       rndLlenarFormulario = '-';
-      finLlenarFormulario = arrayFinLlenarFormulario[0][1];
-      rndRevisarFormulario = randoms[2][0];
-      let tiempoRevisarFormulario = probabilidadUniforme(
-        revisarFormularioTiempoA,
-        revisarFormularioTiempoB,
-        rndRevisarFormulario
-      );
-      finRevisarFormulario = Number(
-        (reloj + tiempoRevisarFormulario).toFixed(2)
-      );
+      finLlenarFormulario = arrayFinLlenarFormulario[1][1];
+
+      if (estadoEmpleado === 'libre') {
+        rndRevisarFormulario = randoms[2][0];
+        let tiempoRevisarFormulario = probabilidadUniforme(
+          revisarFormularioTiempoA,
+          revisarFormularioTiempoB,
+          rndRevisarFormulario
+        );
+        finRevisarFormulario = Number(
+          (reloj + tiempoRevisarFormulario).toFixed(2)
+        );
+        arrayFormularios = actualizarEstadoFormulario(
+          arrayFormularios,
+          reloj,
+          'SR',
+          finRevisarFormulario
+        );
+      } else {
+        rndRevisarFormulario = '-';
+        arrayFormularios = actualizarEstadoFormulario(
+          arrayFormularios,
+          reloj,
+          'ER',
+          '-'
+        );
+      }
+
+      let empleadoActualizado = verificarServidores(empleado);
+      estadoEmpleado = empleadoActualizado.estado;
+      colaEmpleado = empleadoActualizado.cola;
+    }
+
+    // Evento = Fin revisar formulario
+    if (reloj === finRevisarFormulario) {
+      rndCliente = '-';
+      rndLlenarFormulario = '-';
+
+      arrayFormularios = eliminarFormularioFinalizado(arrayFormularios, reloj);
+
+      let empleadoActualizado = decrementarCola(empleado);
+      estadoEmpleado = empleadoActualizado.estado;
+      colaEmpleado = empleadoActualizado.cola;
+
+      if (hayFormulariosEsperandoRevision(arrayFormularios)) {
+        rndRevisarFormulario = randoms[2][0];
+        let tiempoRevisarFormulario = probabilidadUniforme(
+          revisarFormularioTiempoA,
+          revisarFormularioTiempoB,
+          rndRevisarFormulario
+        );
+        finRevisarFormulario = Number(
+          (reloj + tiempoRevisarFormulario).toFixed(2)
+        );
+
+        arrayFormularios = actualizarEspRevisionASiendoRev(
+          arrayFormularios,
+          finRevisarFormulario
+        );
+      } else {
+        if (estadoEmpleado === 'libre') {
+          finRevisarFormulario = '-';
+        }
+      }
     }
 
     randoms = borrarRandoms(randoms);
@@ -389,11 +516,13 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
     console.log(`RELOJ: ${reloj}`);
     console.log('EVENTO:', evento);
     console.log('ArrTiempos:', arrayTiempos);
-    console.log('proximoCliente:', proximoCliente);
+    // console.log('proximoCliente:', proximoCliente);
     console.log('Array finLlenarFormulario', arrayFinLlenarFormulario);
-    console.log('finLlenarFormulario:', finLlenarFormulario);
-    console.log('finRevisarFormulario:', finRevisarFormulario);
-    console.log('finCorregirFormulario:', finCorregirFormulario);
+    // console.log('finLlenarFormulario:', finLlenarFormulario);
+    // console.log('finRevisarFormulario:', finRevisarFormulario);
+    // console.log('finCorregirFormulario:', finCorregirFormulario);
+    console.log('ESTADO', estadoEmpleado);
+    console.log('Array Formularios', arrayFormularios);
 
     tablaParcial.splice(0, 1);
     tablaParcial.push(filaTabla);
@@ -410,7 +539,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
 function obtenerCantidadClientes() {
   let cantidadClientes = document.getElementById('selectorClientes').value;
 
-  return 5; //////////////
+  return 50; //////////////
 }
 
 function obtenerDesdeHasta() {
