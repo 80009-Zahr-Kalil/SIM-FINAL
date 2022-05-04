@@ -552,7 +552,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
     X++;
   }
   console.log('TABLA TOTAL:', tablaTotal);
-  return tablaTotal;
+  return [tablaTotal, colaMaxima];
 }
 
 function obtenerCantidadClientes() {
@@ -573,7 +573,9 @@ function main() {
   let segundoDesde = obtenerDesdeHasta()[0];
   let segundoHasta = obtenerDesdeHasta()[1];
 
-  let tabla = simular(cantidadClientes, segundoDesde, segundoHasta);
+  let [tabla, colaMaxima] = simular(cantidadClientes, segundoDesde, segundoHasta);
+
+  document.getElementById('conclusion').innerHTML = 'La cola máxima fue de ' + colaMaxima;
   let cabecera = cabeceraTabla();
   rellenarTabla(tableBody, cabecera, tabla);
 }
