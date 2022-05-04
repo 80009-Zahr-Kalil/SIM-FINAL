@@ -13,6 +13,31 @@
     <link rel="stylesheet" href="./styles/navbar.css" />
     <link rel="stylesheet" href="./styles/index.css" />
     <title>PAV 2 - TP 1</title>
+    <style>
+      #container {
+        margin: 20;
+      }
+
+      #btnSimular {
+        background: #04aa6d;
+        border: none;
+        width: 100px;
+        height: 40px;
+        margin: 40px 0;
+        color: #fff;
+        font-weight: bold;
+        border-radius: 20px;
+      }
+
+      #btnSimular:hover {
+        box-shadow: 0px 0px 10px 0px gray;
+      }
+
+      th,
+      td {
+        border-right: 1px solid gray;
+      }
+    </style>
   </head>
   <body>
     <div class="topnav">
@@ -27,11 +52,11 @@
           <label class="text">Cantidad de clientes a simular</label>
           <select id="selectorClientes" onchange="obtenerCantidadClientes();">
             <option value="0"></option>
+            <option value="10">10</option>
+            <option value="50">50</option>
             <option value="100">100</option>
             <option value="500">500</option>
             <option value="1000">1000</option>
-            <option value="1500">1500</option>
-            <option value="2000">2000</option>
           </select>
         </div>
         <h3>Seleccionar intervalo de Simulación a visualizar:</h3>

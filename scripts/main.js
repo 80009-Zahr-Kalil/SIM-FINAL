@@ -1,113 +1,3 @@
-// let reloj = 0;
-
-// const eventos = {
-//   inicializacion: {
-//     name: 'inicializacion',
-//   },
-//   llegadaCliente: {
-//     name: 'llegadaCliente',
-//     inicio: 16,
-//     fin: 24,
-//     reloj: null,
-//   },
-//   llenarFormulario: {
-//     name: 'llenarFormulario',
-//     inicio: 100,
-//     fin: 140,
-//     reloj: null,
-//   },
-//   revisarFormulario: {
-//     name: 'revisarFormulario',
-//     inicio: 16,
-//     fin: 20,
-//     reloj: null,
-//   },
-//   corregirFormulario: {
-//     name: 'corregirFormulario',
-//     inicio: 50,
-//     fin: 70,
-//     reloj: null,
-//   },
-// };
-
-// const formularios = [];
-
-// const porcentajeError = 0.1;
-
-// const cantidadClientes = 10;
-
-// let eventoActual = 'inicializacion';
-// let proximoEvento = '';
-
-// // FUNCIONES
-
-// function probabilidadUniforme(a, b, rnd) {
-//   return a + (b - a) * rnd;
-// }
-
-// function determinarProximoEvento(eventoActual, rnd) {
-//   let proximoEvento = [];
-//   if (eventoActual === eventos.inicializacion.name) {
-//     proximoEvento.push(eventos.llegadaCliente.name);
-//   } else if (eventoActual === eventos.llegadaCliente.name) {
-//     proximoEvento.push(eventos.llegadaCliente.name);
-//     proximoEvento.push(eventos.llenarFormulario.name);
-//     // rnd para el segundo evento (llenar formulario)
-//     let rnd2 = Math.random();
-//   } else if (eventoActual === eventos.llenarFormulario.name) {
-//     proximoEvento.push(eventos.revisarFormulario.name);
-//   } else if (eventoActual === eventos.revisarFormulario.name) {
-//     const error = 0.08;
-//     if (error < 0.1) {
-//       proximoEvento.push(eventos.corregirFormulario.name);
-//     }
-//   }
-
-//   const inicio = eventos[proximoEvento].inicio;
-//   const fin = eventos[proximoEvento].fin;
-//   const proximoReloj = reloj + probabilidadUniforme(inicio, fin, rnd);
-
-//   return [proximoEvento[0], proximoReloj];
-// }
-
-// function generarNuevaFila(eventoActual, reloj) {
-//   // Determinar Proximo evento
-//   let rnd = Math.random();
-//   const [proximoEvento, proximoReloj] = determinarProximoEvento(
-//     eventoActual,
-//     rnd
-//   );
-
-//   // Crear Elementos
-//   const nuevaFila = document.createElement('tr');
-//   const celdaEvento = document.createElement('td');
-//   const celdaReloj = document.createElement('td');
-//   const celdaRndLlegadaCliente = document.createElement('td');
-//   const celdaProxLlegadaCliente = document.createElement('td');
-
-//   // Insertar data
-//   celdaEvento.innerHTML = eventoActual;
-//   celdaReloj.innerHTML = reloj;
-//   celdaRndLlegadaCliente.innerHTML = rnd;
-//   celdaProxLlegadaCliente.innerHTML = proximoReloj;
-
-//   // append child
-//   nuevaFila.appendChild(celdaEvento);
-//   nuevaFila.appendChild(celdaReloj);
-//   nuevaFila.appendChild(celdaRndLlegadaCliente);
-//   nuevaFila.appendChild(celdaProxLlegadaCliente);
-
-//   document.getElementById('tableBody').appendChild(nuevaFila);
-// }
-
-// function main() {
-//   for (let i = 0; i < 1; i++) {}
-// }
-
-// main();
-
-///////////////////////////////////
-
 const llegadaClienteTiempoA = 16;
 const llegadaClienteTiempoB = 24;
 const llenarFormularioTiempoA = 100;
@@ -118,6 +8,8 @@ const corregirFormularioTiempoA = 50;
 const corregirFormularioTiempoB = 70;
 
 const tableBody = document.getElementById('tablaSimulacion');
+
+const probabilidadError = 0.1;
 
 // FUNCIONES
 
@@ -244,6 +136,27 @@ function menorFinLlenarFormulario(
   return menorTiempoProximo;
 }
 
+function menorFinCorregirFormulario(
+  arrayFinCorregirFormulario,
+  finCorregirFormulario,
+  reloj
+) {
+  let menorTiempoProximo;
+  if (arrayFinCorregirFormulario.length <= 1) {
+    menorTiempoProximo = finCorregirFormulario;
+  } else {
+    menorTiempoProximo = arrayFinCorregirFormulario[0][1];
+  }
+
+  return menorTiempoProximo;
+}
+
+// function determinarProxFinCorrefirFormulario(arrayFinCorregirFormulario) {
+//   if (arrayFinCorregirFormulario.length <= 1) {
+//     return '-';
+//   }
+// }
+
 function verificarServidores(empleado) {
   if (empleado.estado === 'libre') {
     empleado.estado = 'ocupado';
@@ -300,6 +213,23 @@ function actualizarEspRevisionASiendoRev(arrayFormularios, nuevoFinEstado) {
   return arrayFormularios;
 }
 
+function actualizarSiendoRevASiendoCorregido(arrayFormularios, nuevoFinEstado) {
+  for (let i = 0; i < arrayFormularios.length; i++) {
+    if (arrayFormularios[i].estado === 'SR') {
+      arrayFormularios[i].estado = 'SC';
+      arrayFormularios[i].finEstado = nuevoFinEstado;
+    }
+    break;
+  }
+
+  return arrayFormularios;
+}
+
+function verificarSiCometioErrores(rnd, probError) {
+  if (rnd < probError) return true;
+  return false;
+}
+
 function eliminarFormularioFinalizado(arrayFormularios, reloj) {
   for (let i = 0; i < arrayFormularios.length; i++) {
     if (reloj === arrayFormularios[i].finEstado) {
@@ -309,6 +239,11 @@ function eliminarFormularioFinalizado(arrayFormularios, reloj) {
   }
 
   return arrayFormularios;
+}
+
+function determinarMaximaCola(colaAnterior, colaActual) {
+  if (colaActual > colaAnterior) return colaActual;
+  return colaAnterior;
 }
 
 class Empleado {
@@ -352,22 +287,21 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
   ];
 
   let formulariosCreados = 0;
+  let formulariosFinalizados = 0;
   let colaMaxima = 0;
 
   let empleado = new Empleado(estadoEmpleado, colaEmpleado);
 
   let arrayFormularios = [];
   let arrayFinLlenarFormulario = [];
-  let arrayEmpleados = [empleado];
+  let arrayFinCorregirFormulario = [];
 
-  let FILAS = 0;
-  while (FILAS < 15) {
+  let X = 0;
+  while (X < cantidadClientes) {
+    console.log(formulariosFinalizados);
+    console.log('Array finCorregirFormulario', arrayFinCorregirFormulario);
     reloj = actualizarReloj(arrayTiempos);
     evento = actualizarEvento(arrayTiempos, reloj, formulariosCreados);
-
-    // rndCliente = randoms[0][0];
-    // rndLlenarFormulario = randoms[1][0];
-    // rndRevisarFormulario = randoms[2][0];
 
     // Evento = Inicialización
     if (reloj === 0) {
@@ -386,6 +320,9 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       rndRevisarFormulario = '-';
       rndCliente = randoms[0][0];
       rndLlenarFormulario = randoms[1][0];
+      rndCometioErrores = '-';
+      cometioErrores = '-';
+      rndCorregirFormulario = '-';
 
       let tiempoEntreLlegadas = probabilidadUniforme(
         llegadaClienteTiempoA,
@@ -415,6 +352,9 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       rndCliente = '-';
       rndLlenarFormulario = '-';
       finLlenarFormulario = arrayFinLlenarFormulario[1][1];
+      rndCometioErrores = '-';
+      cometioErrores = '-';
+      rndCorregirFormulario = '-';
 
       if (estadoEmpleado === 'libre') {
         rndRevisarFormulario = randoms[2][0];
@@ -452,7 +392,38 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       rndCliente = '-';
       rndLlenarFormulario = '-';
 
-      arrayFormularios = eliminarFormularioFinalizado(arrayFormularios, reloj);
+      formulariosFinalizados++;
+
+      rndCometioErrores = randoms[3][0];
+      if (verificarSiCometioErrores(rndCometioErrores, probabilidadError)) {
+        cometioErrores = 'SI';
+        rndCorregirFormulario = randoms[4][0];
+        let tiempoCorregirFormulario = probabilidadUniforme(
+          corregirFormularioTiempoA,
+          corregirFormularioTiempoB,
+          rndCorregirFormulario
+        );
+        finCorregirFormulario = Number(
+          (reloj + tiempoCorregirFormulario).toFixed(2)
+        );
+
+        arrayFormularios = actualizarSiendoRevASiendoCorregido(
+          arrayFormularios,
+          finCorregirFormulario
+        );
+
+        arrayFinCorregirFormulario.push([
+          `Formulario ${formulariosCreados}`,
+          finCorregirFormulario,
+        ]);
+      } else {
+        cometioErrores = 'NO';
+        arrayFormularios = eliminarFormularioFinalizado(
+          arrayFormularios,
+          reloj
+        );
+        // formulariosFinalizados++;
+      }
 
       let empleadoActualizado = decrementarCola(empleado);
       estadoEmpleado = empleadoActualizado.estado;
@@ -468,7 +439,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
         finRevisarFormulario = Number(
           (reloj + tiempoRevisarFormulario).toFixed(2)
         );
-
+        console.log('ACTUALIZAR A SIENDO REV');
         arrayFormularios = actualizarEspRevisionASiendoRev(
           arrayFormularios,
           finRevisarFormulario
@@ -480,7 +451,47 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       }
     }
 
+    // Evento = Fin corregir formulario
+    if (reloj === finCorregirFormulario) {
+      rndCliente = '-';
+      rndLlenarFormulario = '-';
+      rndCometioErrores = '-';
+      cometioErrores = '-';
+      finCorregirFormulario = '-';
+
+      if (estadoEmpleado === 'libre') {
+        rndRevisarFormulario = randoms[2][0];
+        let tiempoRevisarFormulario = probabilidadUniforme(
+          revisarFormularioTiempoA,
+          revisarFormularioTiempoB,
+          rndRevisarFormulario
+        );
+        finRevisarFormulario = Number(
+          (reloj + tiempoRevisarFormulario).toFixed(2)
+        );
+        arrayFormularios = actualizarEstadoFormulario(
+          arrayFormularios,
+          reloj,
+          'SR',
+          finRevisarFormulario
+        );
+      } else {
+        rndRevisarFormulario = '-';
+        arrayFormularios = actualizarEstadoFormulario(
+          arrayFormularios,
+          reloj,
+          'ER',
+          '-'
+        );
+      }
+
+      let empleadoActualizado = verificarServidores(empleado);
+      estadoEmpleado = empleadoActualizado.estado;
+      colaEmpleado = empleadoActualizado.cola;
+    }
+
     randoms = borrarRandoms(randoms);
+    colaMaxima = determinarMaximaCola(colaMaxima, colaEmpleado);
 
     let filaTabla = [
       reloj,
@@ -506,6 +517,12 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       reloj
     );
 
+    // finCorregirFormulario = menorFinCorregirFormulario(
+    //   arrayFinCorregirFormulario,
+    //   finCorregirFormulario,
+    //   reloj
+    // );
+
     arrayTiempos = [
       proximoCliente,
       finLlenarFormulario,
@@ -517,20 +534,22 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
     console.log('EVENTO:', evento);
     console.log('ArrTiempos:', arrayTiempos);
     // console.log('proximoCliente:', proximoCliente);
-    console.log('Array finLlenarFormulario', arrayFinLlenarFormulario);
+    // console.log('Array finCorregirFormulario', arrayFinCorregirFormulario);
     // console.log('finLlenarFormulario:', finLlenarFormulario);
     // console.log('finRevisarFormulario:', finRevisarFormulario);
-    // console.log('finCorregirFormulario:', finCorregirFormulario);
+    console.log('finCorregirFormulario:', finCorregirFormulario);
     console.log('ESTADO', estadoEmpleado);
     console.log('Array Formularios', arrayFormularios);
 
     tablaParcial.splice(0, 1);
     tablaParcial.push(filaTabla);
 
-    tablaTotal.push(filaTabla);
+    if (reloj >= segundoDesde && reloj <= segundoHasta) {
+      tablaTotal.push(filaTabla);
+    }
 
     console.log('-------------------------------');
-    FILAS++;
+    X++;
   }
   console.log('TABLA TOTAL:', tablaTotal);
   return tablaTotal;
@@ -539,7 +558,7 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
 function obtenerCantidadClientes() {
   let cantidadClientes = document.getElementById('selectorClientes').value;
 
-  return 50; //////////////
+  return cantidadClientes;
 }
 
 function obtenerDesdeHasta() {
