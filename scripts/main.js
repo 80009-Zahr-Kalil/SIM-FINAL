@@ -208,7 +208,7 @@ function probabilidadUniforme(a, b, rnd) {
   return a + (b - a) * rnd;
 }
 
-function ordernarArray(arr) {
+function ordernarArray(arr, reloj) {
   for (let i = 0; i < arr.length; i++) {
     for (let j = 0; j < arr.length - 1; j++) {
       if (arr[j][1] > arr[j + 1][1]) {
@@ -218,18 +218,26 @@ function ordernarArray(arr) {
       }
     }
   }
+
+  let pos = 0;
+  while (arr[pos][1] <= reloj) {
+    arr.push(arr[pos]);
+    arr.shift();
+  }
+
   return arr;
 }
 
 function menorFinLlenarFormulario(
   arrayFinLlenarFormulario,
-  finLlenarFormulario
+  finLlenarFormulario,
+  reloj
 ) {
   let menorTiempoProximo;
   if (arrayFinLlenarFormulario.length <= 1) {
     menorTiempoProximo = finLlenarFormulario;
   } else {
-    let arrayOrdenado = ordernarArray(arrayFinLlenarFormulario);
+    let arrayOrdenado = ordernarArray(arrayFinLlenarFormulario, reloj);
     menorTiempoProximo = arrayOrdenado[0][1];
   }
 
@@ -237,7 +245,7 @@ function menorFinLlenarFormulario(
   //   `Formulario ${formulariosCreados}`,
   //   finLlenarFormulario,
   // ]);
-  console.log('ArrayFin', arrayFinLlenarFormulario);
+  // console.log('ArrayFin', arrayFinLlenarFormulario);
   return menorTiempoProximo;
 }
 
@@ -283,16 +291,18 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
   let arrayFinLlenarFormulario = [];
   let arrayEmpleados = [empleado];
 
-  while (formulariosCreados < 8) {
-    console.log(arrayTiempos);
+  let FILAS = 0;
+  while (FILAS < 15) {
     reloj = actualizarReloj(arrayTiempos);
     evento = actualizarEvento(arrayTiempos, reloj, formulariosCreados);
-    console.log(`RELOJ: ${reloj}`);
 
-    rndCliente = randoms[0][0];
-    rndLlenarFormulario = randoms[1][0];
+    // rndCliente = randoms[0][0];
+    // rndLlenarFormulario = randoms[1][0];
+    // rndRevisarFormulario = randoms[2][0];
 
+    // Evento = Inicialización
     if (reloj === 0) {
+      rndCliente = randoms[0][0];
       let tiempoEntreLlegadas = probabilidadUniforme(
         llegadaClienteTiempoA,
         llegadaClienteTiempoB,
@@ -301,7 +311,11 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       proximoCliente = Number((reloj + tiempoEntreLlegadas).toFixed(2));
     }
 
+    // Evento = Llegada cliente
     if (reloj === proximoCliente) {
+      rndRevisarFormulario = '-';
+      rndCliente = randoms[0][0];
+      rndLlenarFormulario = randoms[1][0];
       let tiempoEntreLlegadas = probabilidadUniforme(
         llegadaClienteTiempoA,
         llegadaClienteTiempoB,
@@ -323,14 +337,23 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       ]);
     }
 
-    randoms = borrarRandoms(randoms);
+    // Evento = Fin llenar formulario
+    if (reloj === finLlenarFormulario) {
+      rndCliente = '-';
+      rndLlenarFormulario = '-';
+      finLlenarFormulario = arrayFinLlenarFormulario[0][1];
+      rndRevisarFormulario = randoms[2][0];
+      let tiempoRevisarFormulario = probabilidadUniforme(
+        revisarFormularioTiempoA,
+        revisarFormularioTiempoB,
+        rndRevisarFormulario
+      );
+      finRevisarFormulario = Number(
+        (reloj + tiempoRevisarFormulario).toFixed(2)
+      );
+    }
 
-    arrayTiempos = [
-      proximoCliente,
-      finLlenarFormulario,
-      finRevisarFormulario,
-      finCorregirFormulario,
-    ];
+    randoms = borrarRandoms(randoms);
 
     let filaTabla = [
       reloj,
@@ -349,19 +372,36 @@ function simular(cantidadClientes, segundoDesde, segundoHasta) {
       colaEmpleado,
       colaMaxima,
     ];
-    console.log('PROX finLlenarFormulario', finLlenarFormulario);
+
     finLlenarFormulario = menorFinLlenarFormulario(
       arrayFinLlenarFormulario,
-      finLlenarFormulario
+      finLlenarFormulario,
+      reloj
     );
+
+    arrayTiempos = [
+      proximoCliente,
+      finLlenarFormulario,
+      finRevisarFormulario,
+      finCorregirFormulario,
+    ];
+
+    console.log(`RELOJ: ${reloj}`);
+    console.log('EVENTO:', evento);
+    console.log('ArrTiempos:', arrayTiempos);
+    console.log('proximoCliente:', proximoCliente);
+    console.log('Array finLlenarFormulario', arrayFinLlenarFormulario);
+    console.log('finLlenarFormulario:', finLlenarFormulario);
+    console.log('finRevisarFormulario:', finRevisarFormulario);
+    console.log('finCorregirFormulario:', finCorregirFormulario);
 
     tablaParcial.splice(0, 1);
     tablaParcial.push(filaTabla);
-    // console.log(tablaParcial);
 
     tablaTotal.push(filaTabla);
-    console.log(evento);
-    console.log('-----------------------');
+
+    console.log('-------------------------------');
+    FILAS++;
   }
   console.log('TABLA TOTAL:', tablaTotal);
   return tablaTotal;
